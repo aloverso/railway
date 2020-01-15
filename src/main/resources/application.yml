@@ -1,0 +1,2 @@
+patron-lookup:
+  url: "http://localhost:9999/library/patrons/<PATRON_ID>"

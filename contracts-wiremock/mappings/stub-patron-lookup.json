@@ -1,0 +1,35 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/library/patrons/12345"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "12345",
+      "firstName": "Syl",
+      "lastName": "Penguin",
+      "address": "1 South Pole, Antarctica",
+      "phone": "000-000-0000",
+      "patronSince": "2018-11-07",
+      "expirationDate": "2028-11-07",
+      "loans": [
+        {
+          "id": "12345",
+          "checkoutDate": "2020-01-01",
+          "items": ["isbn1", "isbn2"]
+        },
+        {
+          "id": "56789",
+          "checkoutDate": "2020-01-02",
+          "items": ["isbn3"]
+        }
+      ]
+    }
+  }
+}
+
+
