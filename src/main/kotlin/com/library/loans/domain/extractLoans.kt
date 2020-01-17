@@ -1,26 +1,41 @@
 package com.library.loans.domain
 
+import com.library.railway.Failure
 import com.library.railway.Success
 import com.library.railway.TwoTrack
 import java.time.LocalDate
 
 fun extractLoansFactory(catalogLookup: CatalogLookup): (Patron) -> TwoTrack<List<LoanItem>> {
     return { patron: Patron ->
-        Success(patron.loans.flatMap { loan ->
-            listOf(loan.items.map { isbn ->
-                val item = lookupItem(isbn, catalogLookup)
-
-                LoanItem(
-                        title = item.title,
-                        author = item.author,
-                        isbn = isbn,
-                        eligibleForRenewal = isEligibleForRenewal(item),
-                        dueDate = getDueDate(loan.checkoutDate)
-                )
-            }.asIterable())
-        }.flatten())
+        lookupEachItem(catalogLookup)(patron)
+                .pipe()
     }
 }
+
+fun lookupEachItem(catalogLookup: CatalogLookup): (Patron) -> List<TwoTrack<LoanItem>> {
+    return { patron: Patron ->
+        patron.loans.flatMap { loan ->
+            listOf(loan.items.map { isbn ->
+                try {
+                    val item = catalogLookup.fetch(isbn)
+                    Success(LoanItem(
+                            title = item.title,
+                            author = item.author,
+                            isbn = isbn,
+                            eligibleForRenewal = isEligibleForRenewal(item),
+                            dueDate = getDueDate(loan.checkoutDate)
+                    ))
+                } catch (e: Exception) {
+                    Failure(ErrorMessage.ItemLookupFailed)
+                }
+            }.asIterable())
+        }.flatten()
+    }
+}
+
+//fun condenseItems(twoTrackItems: List<TwoTrack<LoanItem>>): TwoTrack<List<LoanItem>> {
+//    twoTrackItems.containsAll()
+//}
 
 fun isEligibleForRenewal(item: Item): Boolean {
     return item.numberOfCopies - item.copiesOnLoan > 0

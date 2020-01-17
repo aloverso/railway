@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus
 enum class ErrorMessage {
     // loopkup errors
     GetPatronFailed,
+    ItemLookupFailed,
+    ItemLookupCatalogFailed,
 
     // validation errors
     PatronshipExpired,

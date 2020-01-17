@@ -1,11 +1,13 @@
 package com.library.domain
 
+import com.library.assertFailure
 import com.library.buildItem
 import com.library.buildLoan
 import com.library.buildPatron
 import com.library.cataloglookupplugin.BrokenCatalogLookup
 import com.library.cataloglookupplugin.StubCatalogLookup
 import com.library.getSuccess
+import com.library.loans.domain.ErrorMessage
 import com.library.loans.domain.LoanItem
 import com.library.loans.domain.Patron
 import com.library.loans.domain.extractLoansFactory
@@ -99,7 +101,25 @@ class ExtractLoansTest {
     }
 
     @Test
-    fun `it returns error fields when item cannot be found`() {
+    fun `it returns error fields when an item cannot be found`() {
+        val brokenCatalogLookup = BrokenCatalogLookup()
+        extractLoans = extractLoansFactory(brokenCatalogLookup)
+
+        val patron = buildPatron(loans = listOf(
+                buildLoan(items = listOf("123", "456"), checkoutDate = LocalDate.of(2020,1,1))
+        ))
+
+        val loans = getSuccess(extractLoans(patron))
+
+        assertThat(loans[0].isbn).isEqualTo("123")
+        assertThat(loans[0].title).isEqualTo("Unable to retrieve title at this time")
+        assertThat(loans[0].author).isEqualTo("Unable to retrieve author at this time")
+        assertThat(loans[0].eligibleForRenewal).isEqualTo(false)
+        assertThat(loans[0].dueDate).isEqualTo(LocalDate.of(2020,1,22))
+    }
+
+    @Test
+    fun `it fails when all items cannot be found`() {
         val brokenCatalogLookup = BrokenCatalogLookup()
         extractLoans = extractLoansFactory(brokenCatalogLookup)
 
@@ -107,12 +127,6 @@ class ExtractLoansTest {
                 buildLoan(items = listOf("123"), checkoutDate = LocalDate.of(2020,1,1))
         ))
 
-        val loans = getSuccess(extractLoans(patron))
-
-        assertThat(loans[0].title).isEqualTo("Unable to retrieve title at this time")
-        assertThat(loans[0].author).isEqualTo("Unable to retrieve author at this time")
-        assertThat(loans[0].isbn).isEqualTo("123")
-        assertThat(loans[0].eligibleForRenewal).isEqualTo(false)
-        assertThat(loans[0].dueDate).isEqualTo(LocalDate.of(2020,1,22))
+        assertFailure(extractLoans(patron), ErrorMessage.ItemLookupCatalogFailed)
     }
 }
